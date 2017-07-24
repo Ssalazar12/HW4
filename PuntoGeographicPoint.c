@@ -7,6 +7,9 @@
 /* Numero de columnas 744, numero de filas 500 */
 #define ROWS 500
 #define COLS 744
+#define DATA_POINTS 100000
+#define PI 3.14159265
+#define e
 
 int **matrix;
 
@@ -66,6 +69,68 @@ void init(){
 	}
 }
 
+/* retorna una gaussiana (punto) centrada en b que es un entero que corresponde a la 
+	posicion de un elemento del array. Se usa el método polar tomado de
+	https://phoxis.org/2013/05/04/generating-random-numbers-from-normal-distribution-in-c/
+ */
+float rand_normal(int b){
+	int point;
+	float u1, u2;
+	float w;
+	float x1;
+	//generamos u1, u2 entre -1 y 1 tal que U1^2 + U2^2 <1
+	u1= (2)*rand() - 1;
+	u2= (2)*rand() - 1;
+	w = pow(u1,2) + pow(u2,2);
+	while(w >= 1 || w==0){
+		u1= (2)*((double) rand()/RAND_MAX) -1;
+		u2= (2)*((double) rand()/RAND_MAX) -1;	
+		w = pow(u1,2) + pow(u2,2);
+
+	}
+	x1= b + u1 * sqrt( -2*log(w)/w );
+	return x1;
+}
+
+/* recibe una tupla (x_in y_in) y crea un circulo, aumentando su radio hasta tocar un 1 */
+float circle(int y_in, int x_in){
+	//las siguientes variables buscan 1's en todas las direcciones 
+	int v; //busca por todas partes
+	int xp;
+	int yp;
+	float rad;
+	float area;
+	
+	v=0;
+	xp=x_in;
+	yp=y_in;
+	 
+	//tener un solo loop asegura que v y h sean de igual tamaño
+	while(matrix[yp+v][xp]!=1 && matrix[yp-v][xp]!=1 && matrix[yp][xp+v]!=1 && matrix[yp][xp-v]!=1){
+		printf("%d %d \n", v, matrix[yp][xp]);
+		//pregunta si le da la vuelta al mundo a la derecha
+		if(xp+v>=COLS-1){
+			printf("se va a la derecha \n");
+			xp=0;	
+		}
+		//pregunta si le da la vuelta al mundo a la izquierda
+		if(xp-v<0){
+			printf("se va a la izquierda \n");
+			xp=COLS-1;	
+		}
+		// si se pasa por arriba se encuentra de una con un cero
+		if(yp-v<=0){
+			printf("se va arriba \n");
+			break;	
+		}	
+		v+=1;
+	}
+	
+	rad = sqrt( pow(v,2) + pow(v,2));
+	area = PI * pow(rad,2);
+	return area;
+}
+
 /*Escribe los resultados en archivos de datos*/
 /*
 void files(){
@@ -83,12 +148,11 @@ void files(){
 */
 
 int main(){
+	float number;
 	
 	init();
-	
+
 	read_f();
 	
-	files();
-
 return(0);	
 }
