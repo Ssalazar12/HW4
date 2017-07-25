@@ -12,10 +12,10 @@
 /* Numero de columnas 744, numero de filas 500 */
 #define ROWS 500
 #define COLS 744
-#define DATA_POINTS 300000
+#define DATA_POINTS 400000
 #define PI 3.14159265
 
-int **matrix;
+int *matrix[ROWS];
 int max_x;	//coord. x del polo de inaccesibilidad
 int max_y;	//coord. y del polo de inaccesibilidad
 float max_area; //area del circulo del polo a algun punto con tierra
@@ -58,7 +58,7 @@ void read_f(){
 	}
 	fclose(fstream);
 	*/
-	
+	i=0;
 	while(fgets(buffer, sizeof(buffer), fstream)!=NULL){
 		j=0;
 		line=fgets(buffer, sizeof(buffer), fstream);
@@ -70,13 +70,13 @@ void read_f(){
 		}
 		i+=1;
 	}
+	fclose(fstream);
 }	
 
 /* Inicializa las variables*/
 void init(){
 	int i;
-	//inicializa matrix
-	matrix= (int **)malloc(ROWS * sizeof(int));
+	//asigna un espacio a los pinters de las columnas en las filas
 	for (i=0; i<ROWS; i++){
 		matrix[i] = (int *)malloc(COLS * sizeof(int));
 	}
@@ -97,7 +97,7 @@ float rand_normal(int b){
 	float x1;
 	float std=2; //desviacion estandar
 	
-	srand(time(NULL)); 
+	//srand(time(NULL)); 
 	//generamos u1, u2 entre -1 y 1 tal que U1^2 + U2^2 <1
 	u1=  2 * (double)rand()/RAND_MAX +0.5 - 1;
 	u2= 2 * (double)rand()/RAND_MAX +0.5 - 1;
@@ -176,12 +176,8 @@ int main(){
 
 	//Se asegura que no esten en tierra (osea sobre un 1)
 	while(matrix[max_y][max_x]==1){
-		
-		printf("while de rand \n");
 		max_x= 743* (double)rand()/RAND_MAX +0.5;
 		max_y= 499* (double)rand()/RAND_MAX +0.5;	
-		printf("%d %d\n", max_x, max_y);
-
 		}
 	
 	//Encuentra el maximo circulo posible para el primer intento
@@ -206,14 +202,14 @@ int main(){
 		//Comienza a decidir si guarda los try como nuevos max
 		alpha =  try_area/max_area;
 		//actualiza las variables max
-		if(alpha>1){
+		if(alpha>=1){
 			max_x= try_x;
 			max_y= try_y;
 			max_area= try_area;	
 		}
 		else{
-			srand(time(NULL));
 			beta= (double)rand()/RAND_MAX; 
+			//printf("%f \n", beta);
 			//en este caso rechaza las variables try
 			if(alpha<beta){
 				continue; //ojo con esto podria generar un error
@@ -228,8 +224,7 @@ int main(){
 		}
 	}
 	
-	printf("%d %d %d %d %f \n", max_x, max_y, matrix[max_y][max_x], counter, beta);
-	free(matrix);
+	printf("%d %d %d %f \n", max_x, max_y, counter, beta);
 	
 /*
 	Al final de este for deberiamos tener el polo de inaccesibilidad sur y 
