@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <math.h>
 
 /* i y j estan reservados como indices dentro de funciones */
@@ -9,9 +10,18 @@
 #define COLS 744
 #define DATA_POINTS 100000
 #define PI 3.14159265
-#define e
 
 int **matrix;
+int max_x;	//coord. x del polo de inaccesibilidad
+int max_y;	//coord. y del polo de inaccesibilidad
+float max_area; //area del circulo del polo a algun punto con tierra
+//variables try guardan los intentos para comparar con la variable max de la iteracion actual
+int try_x;
+int try_y;
+float try_area;
+
+float alpha; //guarda la razon entre try y max area para decidir que se hace con el punto
+float beta; //para hacer la segunda comparacion de alpha
 
 /*Lee los archivos*/
 void read_f(){
@@ -61,12 +71,17 @@ void read_f(){
 /* Inicializa las variables*/
 void init(){
 	int i;
-	
 	//inicializa matrix
 	matrix= (int **)malloc(ROWS * sizeof(int));
 	for (i=0; i<ROWS; i++){
 		matrix[i] = (int *)malloc(COLS * sizeof(int));
 	}
+	//inicializa el resto
+	max_x= 0;
+	max_y= 0;
+	max_area= 0;
+	alpha = 0;
+	beta = 0;
 }
 
 /* retorna una gaussiana (punto) centrada en b que es un entero que corresponde a la 
@@ -78,6 +93,9 @@ float rand_normal(int b){
 	float u1, u2;
 	float w;
 	float x1;
+	float std=2; //desviacion estandar
+	
+	srand(time(NULL)); 
 	//generamos u1, u2 entre -1 y 1 tal que U1^2 + U2^2 <1
 	u1= (2)*rand() - 1;
 	u2= (2)*rand() - 1;
@@ -88,7 +106,7 @@ float rand_normal(int b){
 		w = pow(u1,2) + pow(u2,2);
 
 	}
-	x1= b + u1 * sqrt( -2*log(w)/w );
+	x1= b + std* (u1*sqrt( -2*log(w)/w ));
 	return x1;
 }
 
@@ -107,20 +125,16 @@ float circle(int y_in, int x_in){
 	 
 	//tener un solo loop asegura que v y h sean de igual tamaño
 	while(matrix[yp+v][xp]!=1 && matrix[yp-v][xp]!=1 && matrix[yp][xp+v]!=1 && matrix[yp][xp-v]!=1){
-		printf("%d %d \n", v, matrix[yp][xp]);
 		//pregunta si le da la vuelta al mundo a la derecha
 		if(xp+v>=COLS-1){
-			printf("se va a la derecha \n");
 			xp=0;	
 		}
 		//pregunta si le da la vuelta al mundo a la izquierda
 		if(xp-v<0){
-			printf("se va a la izquierda \n");
 			xp=COLS-1;	
 		}
 		// si se pasa por arriba se encuentra de una con un cero
 		if(yp-v<=0){
-			printf("se va arriba \n");
 			break;	
 		}	
 		v+=1;
@@ -132,27 +146,83 @@ float circle(int y_in, int x_in){
 }
 
 /*Escribe los resultados en archivos de datos*/
-/*
 void files(){
-	FILE *out;
-	int i;
-	char tokens[COLS * 2]= {"%f"};
-	tokens[743]= '\n';
-	out = fopen("data.txt" , "w+");
-	for(i=0;i<ROWS; i++){
-		fprintf(out, tokens, matrix[i]);
-	}
-	fclose(out);
+	FILE *fout;
+	fout = fopen("polo.csv" , "w+");
+	fprintf(fout, "%d %d %f", max_x, max_y, max_area);	
 }
 
-*/
-
 int main(){
-	float number;
 	
+	int t; //indice para iterar MCMC
+	/*inicializa variables*/	
 	init();
-
+	
+	/*lee los datos y los pone en matrix*/
 	read_f();
 	
+	/* Implementacion de MCMC para encontrar el polo sur de inaccesibilidad*/
+	//Primer intento genera 2 numeros aleatorios: x entre 0 y 743 y y entre 499 (deben ser enteros)
+	srand(time(NULL)); //da nuevas seeds al rand
+	max_x= (int) (rand() % 744) ;
+	max_y= (int) (rand() % 500);
+
+	//Se asegura que no esten en tierra (osea sobre un 1)
+	while(matrix[max_y][max_x]==1){
+		max_x=(int) ((COLS-2)*rand());
+		max_y=(int) ((ROWS-2)*rand());
+	}
+	
+	//Encuentra el maximo circulo posible para el primer intento
+	//printf("%d %d %d \n", max_x, max_y, matrix[max_y][max_x]);
+
+	max_area = circle(max_y, max_x);
+	int counter;
+	counter =0;
+	//Comienza el ciclo
+	for(t=0; t<DATA_POINTS; t++){
+		counter+=1;
+
+		printf("%d %d %d %d\n", max_x, max_y, matrix[max_y][max_x], counter);
+		try_x=(int) rand_normal(max_x);
+		try_y=(int) rand_normal(max_y);
+		
+		while(matrix[try_y][try_x]==1 || max_x>=COLS || max_y>=ROWS || max_x<0 || max_y<0){
+			try_x=(int) rand_normal(max_x);
+			try_y=(int) rand_normal(max_y);
+		}
+			
+		try_area = circle(try_y, try_x);
+		//Comienza a decidir si guarda los try como nuevos max
+		alpha =  try_area/max_area;
+		//actualiza las variables max
+		if(alpha>1){
+			max_x= try_x;
+			max_y= try_y;
+			max_area= try_area;	
+		}
+		else{
+			beta= (double)rand()/RAND_MAX; 
+			//en este caso rechaza las variables try
+			if(alpha<beta){
+				continue; //ojo con esto podria generar un error
+			}
+			
+			//si alpha es mayor a beta entonces actualiza las variables max
+			else{
+				max_x= try_x;
+				max_y= try_y;
+				max_area= try_area;
+			}	
+		}
+	}
+	
+/*
+	Al final de este for deberiamos tener el polo de inaccesibilidad sur y 
+	se pasa a crear los archivos de datos
+*/
+	files();
+
+//error tal vez? la desviacion estandar de la gaussiana
 return(0);	
 }
