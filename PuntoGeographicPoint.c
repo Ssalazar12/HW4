@@ -4,11 +4,15 @@
 #include <time.h>
 #include <math.h>
 
+/*
+ 	Importante usa rlos rand() bien porque sino mandan unos numeros loquisimos y segmentation error 11 :'v
+*/
+
 /* i y j estan reservados como indices dentro de funciones */
 /* Numero de columnas 744, numero de filas 500 */
 #define ROWS 500
 #define COLS 744
-#define DATA_POINTS 100000
+#define DATA_POINTS 300000
 #define PI 3.14159265
 
 int **matrix;
@@ -77,8 +81,6 @@ void init(){
 		matrix[i] = (int *)malloc(COLS * sizeof(int));
 	}
 	//inicializa el resto
-	max_x= 0;
-	max_y= 0;
 	max_area= 0;
 	alpha = 0;
 	beta = 0;
@@ -97,12 +99,14 @@ float rand_normal(int b){
 	
 	srand(time(NULL)); 
 	//generamos u1, u2 entre -1 y 1 tal que U1^2 + U2^2 <1
-	u1= (2)*rand() - 1;
-	u2= (2)*rand() - 1;
+	u1=  2 * (double)rand()/RAND_MAX +0.5 - 1;
+	u2= 2 * (double)rand()/RAND_MAX +0.5 - 1;
 	w = pow(u1,2) + pow(u2,2);
 	while(w >= 1 || w==0){
-		u1= (2)*((double) rand()/RAND_MAX) -1;
-		u2= (2)*((double) rand()/RAND_MAX) -1;	
+		//u1= (2)*((double) rand()/RAND_MAX) -1;
+		//u2= (2)*((double) rand()/RAND_MAX) -1;	
+		u1= 2 * (double)rand()/RAND_MAX +0.5 - 1;
+		u2= 2 * (double)rand()/RAND_MAX +0.5 - 1;
 		w = pow(u1,2) + pow(u2,2);
 
 	}
@@ -164,14 +168,21 @@ int main(){
 	/* Implementacion de MCMC para encontrar el polo sur de inaccesibilidad*/
 	//Primer intento genera 2 numeros aleatorios: x entre 0 y 743 y y entre 499 (deben ser enteros)
 	srand(time(NULL)); //da nuevas seeds al rand
-	max_x= (int) (rand() % 744) ;
-	max_y= (int) (rand() % 500);
+	
+	max_x= 742* (double)rand()/RAND_MAX + 0.5 ;
+	max_y= 498* (double)rand()/RAND_MAX + 0.5 ;
+	
+	printf("%d %d\n", max_x, max_y);
 
 	//Se asegura que no esten en tierra (osea sobre un 1)
 	while(matrix[max_y][max_x]==1){
-		max_x=(int) ((COLS-2)*rand());
-		max_y=(int) ((ROWS-2)*rand());
-	}
+		
+		printf("while de rand \n");
+		max_x= 743* (double)rand()/RAND_MAX +0.5;
+		max_y= 499* (double)rand()/RAND_MAX +0.5;	
+		printf("%d %d\n", max_x, max_y);
+
+		}
 	
 	//Encuentra el maximo circulo posible para el primer intento
 	//printf("%d %d %d \n", max_x, max_y, matrix[max_y][max_x]);
@@ -182,15 +193,14 @@ int main(){
 	//Comienza el ciclo
 	for(t=0; t<DATA_POINTS; t++){
 		counter+=1;
-
-		printf("%d %d %d %d\n", max_x, max_y, matrix[max_y][max_x], counter);
+		//printf("%d %d %d %d %f \n", max_x, max_y, matrix[max_y][max_x], counter, beta);
 		try_x=(int) rand_normal(max_x);
 		try_y=(int) rand_normal(max_y);
 		
-		while(matrix[try_y][try_x]==1 || max_x>=COLS || max_y>=ROWS || max_x<0 || max_y<0){
+		while(matrix[try_y][try_x]==1 || try_x<=0 || try_y<=0 || try_x>=COLS-1 || try_y >= ROWS-1){
 			try_x=(int) rand_normal(max_x);
 			try_y=(int) rand_normal(max_y);
-		}
+		} 
 			
 		try_area = circle(try_y, try_x);
 		//Comienza a decidir si guarda los try como nuevos max
@@ -202,6 +212,7 @@ int main(){
 			max_area= try_area;	
 		}
 		else{
+			srand(time(NULL));
 			beta= (double)rand()/RAND_MAX; 
 			//en este caso rechaza las variables try
 			if(alpha<beta){
@@ -217,12 +228,14 @@ int main(){
 		}
 	}
 	
+	printf("%d %d %d %d %f \n", max_x, max_y, matrix[max_y][max_x], counter, beta);
+	free(matrix);
+	
 /*
 	Al final de este for deberiamos tener el polo de inaccesibilidad sur y 
 	se pasa a crear los archivos de datos
 */
 	files();
 
-//error tal vez? la desviacion estandar de la gaussiana
 return(0);	
 }
