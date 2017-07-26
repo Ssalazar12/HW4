@@ -99,19 +99,21 @@ float rand_normal(int b){
 	
 	//srand(time(NULL)); 
 	//generamos u1, u2 entre -1 y 1 tal que U1^2 + U2^2 <1
-	u1=  2 * (double)rand()/RAND_MAX +0.5 - 1;
-	u2= 2 * (double)rand()/RAND_MAX +0.5 - 1;
+	//u1=  2 * (double)rand()/RAND_MAX +0.5 - 1;
+	//u2= 2 * (double)rand()/RAND_MAX +0.5 - 1;
+	u1= 2*drand48() -1;
+	u2= 2*drand48() -1;
 	w = pow(u1,2) + pow(u2,2);
 	while(w >= 1 || w==0){
 		//u1= (2)*((double) rand()/RAND_MAX) -1;
 		//u2= (2)*((double) rand()/RAND_MAX) -1;	
-		u1= 2 * (double)rand()/RAND_MAX +0.5 - 1;
-		u2= 2 * (double)rand()/RAND_MAX +0.5 - 1;
+		u1= 2*drand48() -1;
+		u2= 2*drand48() -1;
 		w = pow(u1,2) + pow(u2,2);
 
 	}
 	x1= b + std* (u1*sqrt( -2*log(w)/w ));
-	return x1;
+	return (int)x1;
 }
 
 /* recibe una tupla (x_in y_in) y crea un circulo, aumentando su radio hasta tocar un 1 */
@@ -129,22 +131,27 @@ float circle(int y_in, int x_in){
 	 
 	//tener un solo loop asegura que v y h sean de igual tamaño
 	while(matrix[yp+v][xp]!=1 && matrix[yp-v][xp]!=1 && matrix[yp][xp+v]!=1 && matrix[yp][xp-v]!=1){
+		v+=1;
 		//pregunta si le da la vuelta al mundo a la derecha
 		if(xp+v>=COLS-1){
 			xp=0;	
 		}
 		//pregunta si le da la vuelta al mundo a la izquierda
-		if(xp-v<0){
+		if(xp-v<=0){
 			xp=COLS-1;	
 		}
 		// si se pasa por arriba se encuentra de una con un cero
 		if(yp-v<=0){
 			break;	
 		}	
-		v+=1;
+		//si intenta pasarse por abajo tambien tas tas tas
+		if(yp+v>=ROWS-1){
+			break;	
+		}	
+		//printf("%d %d %d %d %d %d %d \n", yp+v, yp-v, xp+v, xp-v, xp, yp,v );
 	}
 	
-	rad = sqrt( pow(v,2) + pow(v,2));
+	rad = v;
 	area = PI * pow(rad,2);
 	return area;
 }
@@ -154,6 +161,7 @@ void files(){
 	FILE *fout;
 	fout = fopen("polo.csv" , "w+");
 	fprintf(fout, "%d %d %f", max_x, max_y, max_area);	
+	fclose(fout);
 }
 
 int main(){
@@ -167,25 +175,31 @@ int main(){
 	
 	/* Implementacion de MCMC para encontrar el polo sur de inaccesibilidad*/
 	//Primer intento genera 2 numeros aleatorios: x entre 0 y 743 y y entre 499 (deben ser enteros)
-	srand(time(NULL)); //da nuevas seeds al rand
-	
-	max_x= 742* (double)rand()/RAND_MAX + 0.5 ;
-	max_y= 498* (double)rand()/RAND_MAX + 0.5 ;
+	//srand(time(NULL)); //da nuevas seeds al rand
+	srand48(time(NULL));
+	//max_x= 742* (double)rand()/RAND_MAX + 0.5 ;
+	//max_y= 498* (double)rand()/RAND_MAX + 0.5 ;
+	max_x= 742* drand48();
+	max_y= 498* drand48();
 	
 	printf("%d %d\n", max_x, max_y);
 
 	//Se asegura que no esten en tierra (osea sobre un 1)
 	while(matrix[max_y][max_x]==1){
-		max_x= 743* (double)rand()/RAND_MAX +0.5;
-		max_y= 499* (double)rand()/RAND_MAX +0.5;	
+		//max_x= 743* (double)rand()/RAND_MAX +0.5;
+		//max_y= 499* (double)rand()/RAND_MAX +0.5;	
+		max_x= 742* drand48();
+		max_y= 498* drand48();
 		}
 	
 	//Encuentra el maximo circulo posible para el primer intento
 	//printf("%d %d %d \n", max_x, max_y, matrix[max_y][max_x]);
 
 	max_area = circle(max_y, max_x);
+	
 	int counter;
 	counter =0;
+	
 	//Comienza el ciclo
 	for(t=0; t<DATA_POINTS; t++){
 		counter+=1;
@@ -193,7 +207,7 @@ int main(){
 		try_x=(int) rand_normal(max_x);
 		try_y=(int) rand_normal(max_y);
 		
-		while(matrix[try_y][try_x]==1 || try_x<=0 || try_y<=0 || try_x>=COLS-1 || try_y >= ROWS-1){
+		while(matrix[try_y][try_x]==1 || try_x<0 || try_y<0 || try_x>COLS-1 || try_y > ROWS-1){
 			try_x=(int) rand_normal(max_x);
 			try_y=(int) rand_normal(max_y);
 		} 
@@ -208,7 +222,7 @@ int main(){
 			max_area= try_area;	
 		}
 		else{
-			beta= (double)rand()/RAND_MAX; 
+			beta=drand48(); 
 			//printf("%f \n", beta);
 			//en este caso rechaza las variables try
 			if(alpha<beta){
@@ -221,7 +235,7 @@ int main(){
 				max_y= try_y;
 				max_area= try_area;
 			}	
-		}
+		}			
 	}
 	
 	printf("%d %d %d %f \n", max_x, max_y, counter, beta);
