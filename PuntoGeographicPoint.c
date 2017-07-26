@@ -130,26 +130,29 @@ float circle(int y_in, int x_in){
 	yp=y_in;
 	 
 	//tener un solo loop asegura que v y h sean de igual tamaño
+	printf("Nueva llamada %d %d \n", yp, yp);
 	while(matrix[yp+v][xp]!=1 && matrix[yp-v][xp]!=1 && matrix[yp][xp+v]!=1 && matrix[yp][xp-v]!=1){
-		v+=1;
 		//pregunta si le da la vuelta al mundo a la derecha
-		if(xp+v>=COLS-1){
+		if(xp+v+1>=COLS-1){
 			xp=0;	
 		}
 		//pregunta si le da la vuelta al mundo a la izquierda
-		if(xp-v<=0){
+		if(xp-(v+1)<=0){
 			xp=COLS-1;	
 		}
 		// si se pasa por arriba se encuentra de una con un cero
-		if(yp-v<=0){
+		if(yp-(v+1)<=0){
+		  printf("Entra \n");
 			break;	
 		}	
 		//si intenta pasarse por abajo tambien tas tas tas
-		if(yp+v>=ROWS-1){
+		if(yp+v+1>=ROWS-1){
 			break;	
-		}	
-		//printf("%d %d %d %d %d %d %d \n", yp+v, yp-v, xp+v, xp-v, xp, yp,v );
+		}
+		v+=1;
+		printf("%d %d %d %d %d %d %d \n", yp+v, yp-v, xp+v, xp-v, xp, yp,v );
 	}
+	printf("sale del while \n");
 	
 	rad = v;
 	area = PI * pow(rad,2);
@@ -188,8 +191,8 @@ int main(){
 	while(matrix[max_y][max_x]==1){
 		//max_x= 743* (double)rand()/RAND_MAX +0.5;
 		//max_y= 499* (double)rand()/RAND_MAX +0.5;	
-		max_x= 742* drand48();
-		max_y= 498* drand48();
+		max_x= 3* drand48();
+		max_y= 3* drand48();
 		}
 	
 	//Encuentra el maximo circulo posible para el primer intento
@@ -207,16 +210,21 @@ int main(){
 		try_x=(int) rand_normal(max_x);
 		try_y=(int) rand_normal(max_y);
 		
-		while(matrix[try_y][try_x]==1 || try_x<0 || try_y<0 || try_x>COLS-1 || try_y > ROWS-1){
+		while( try_x<0 || try_y<0 || try_x>COLS-1 || try_y > ROWS-1){
 			try_x=(int) rand_normal(max_x);
 			try_y=(int) rand_normal(max_y);
 		} 
+		
+		while(matrix[try_y][try_x]==1){
+		  try_x=(int) rand_normal(max_x);
+		  try_y=(int) rand_normal(max_y);
+		}
 			
 		try_area = circle(try_y, try_x);
 		//Comienza a decidir si guarda los try como nuevos max
 		alpha =  try_area/max_area;
 		//actualiza las variables max
-		if(alpha>=1){
+		if(alpha>1){
 			max_x= try_x;
 			max_y= try_y;
 			max_area= try_area;	
