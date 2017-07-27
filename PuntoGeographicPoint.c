@@ -75,6 +75,7 @@ void init(){
 	posicion de un elemento del array. Se usa el método polar tomado de
 	https://phoxis.org/2013/05/04/generating-random-numbers-from-normal-distribution-in-c/
  */
+ /*
 float rand_normal(int b){
 	int point;
 	float u1, u2;
@@ -99,7 +100,7 @@ float rand_normal(int b){
 	}
 	x1= b + std* (u1*sqrt( -2*log(w)/w ));
 	return (int)x1;
-}
+}*/
 
 /* recibe una tupla (x_in y_in) y crea un circulo, aumentando su radio hasta tocar un 1 */
 float circle(int y_in, int x_in){
@@ -132,7 +133,7 @@ float circle(int y_in, int x_in){
 		  //printf("Entra \n");
 			break;	
 		}	
-		//si intenta pasarse por abajo tambien tas tas tas
+		//si intenta pasarse por abajo tambien llega klan klan klan muere kakaroto
 		if(yp+v+1>=ROWS-1){
 			break;	
 		}	
@@ -177,19 +178,13 @@ int main(){
 	max_x= COLS* drand48();
 	max_y= ROWS* drand48();
 	
-	//printf("%d %d\n", max_x, max_y);
-
 	//Se asegura que no esten en tierra (osea sobre un 1)
 	while(matrix[max_y][max_x]==1){
-		//max_x= 743* (double)rand()/RAND_MAX +0.5;
-		//max_y= 499* (double)rand()/RAND_MAX +0.5;	
 		max_x= COLS* drand48();
 		max_y= ROWS* drand48();
 		}
 	
 	//Encuentra el maximo circulo posible para el primer intento
-	printf("%d %d %d \n", max_x, max_y, matrix[max_y][max_x]);
-
 	max_area = circle(max_y, max_x);
 	
 	int counter;
@@ -197,23 +192,16 @@ int main(){
 	//Comienza el ciclo
 	for(t=0; t<DATA_POINTS; t++){
 		counter+=1;
-		//printf("%d %d %d %d %f \n", max_x, max_y, matrix[max_y][max_x], counter, beta);
-		//try_x=(int) rand_normal(max_x);
-		//try_y=(int) rand_normal(max_y);
 		try_x= COLS*drand48();
 		try_y= ROWS*drand48();
 
 		
 		while( try_x<0 || try_y<0 || try_x>COLS-1 || try_y > ROWS-1){
-			//try_x=(int) rand_normal(max_x);
-			//try_y=(int) rand_normal(max_y);
 			try_x= COLS*drand48();
 			try_y= ROWS*drand48();
 		} 
 		
 		while(matrix[try_y][try_x]==1){
-		  //try_x=(int) rand_normal(max_x);
-		  //try_y=(int) rand_normal(max_y);
 		  try_x= COLS*drand48();
 		  try_y= ROWS*drand48();
 		}
@@ -229,7 +217,6 @@ int main(){
 		}
 		else{
 			beta=drand48(); 
-			//printf("%f \n", beta);
 			//en este caso rechaza las variables try
 			if(alpha<beta){
 				continue; 
@@ -244,10 +231,10 @@ int main(){
 		}			
 	}
 	
-	printf("%d %d %f \n", max_x, max_y, max_area);
+	printf("Las cordenadas del punto mas alejado son %d %d \n", max_x, max_y);
 	
 /*
-	Al final de este for deberiamos tener el polo de inaccesibilidad sur y 
+	Al final de esto y con suerte deberiamos tener el polo de inaccesibilidad sur y 
 	se pasa a crear los archivos de datos
 */
 	files();
