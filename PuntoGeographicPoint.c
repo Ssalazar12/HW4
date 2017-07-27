@@ -157,9 +157,18 @@ void files(){
 	int i;
 	int j;
 	FILE *fout;
+	FILE *fother;
 	fout = fopen("polo.csv" , "w+");
 	fprintf(fout, "%d %d %f", max_x, max_y, max_area);	
+	fother = fopen("datamap.txt", "w+");
+	for(i=0;i<ROWS;i++){
+		for(j=0;j<COLS;j++){
+			fprintf(fother, "%d ", matrix[i][j]);	
+		}	
+		fprintf(fother, "\n");
+	}
 	fclose(fout);
+	fclose(fother);
 }
 
 int main(){
