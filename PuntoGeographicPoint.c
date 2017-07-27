@@ -10,9 +10,9 @@
 
 /* i y j estan reservados como indices dentro de funciones */
 /* Numero de columnas 744, numero de filas 500 */
-#define ROWS 500
+#define ROWS 250  // pero por alguna razón guarda todos los datos en 250 y el resto lo inicializa en ceros
 #define COLS 744
-#define DATA_POINTS 400000
+#define DATA_POINTS 100000
 #define PI 3.14159265
 
 int *matrix[ROWS];
@@ -34,7 +34,7 @@ void read_f(){
 	char *line; // recibe la linea de buffer
 	char *part; // recibe las partes de la linea
 	FILE *fstream;
-	char buffer[1000];
+	char buffer[2000];
 	
 	fstream=fopen("map_data.txt", "r"); //abre el stream
 	
@@ -42,22 +42,7 @@ void read_f(){
 		printf("\n No se pudo abrir el archivo \n ");
 	}
 	
-	//itera sobre las lineas del archivo
-	/*
-	for(i=0;i<ROWS;i++){
-		line=fgets(buffer, sizeof(buffer), fstream);
-		if(line!=NULL){
-			part= strtok(line, " ");
-			for(j=0;j<COLS;j++){
-				//printf("%s \n", part);
-				matrix[i][j]=atoi(part);
-				printf("%d \n", matrix[i]);	
-				part=strtok(NULL," ");
-			}	
-		}	
-	}
-	fclose(fstream);
-	*/
+	//itera sobre las lineas del archivo	
 	i=0;
 	while(fgets(buffer, sizeof(buffer), fstream)!=NULL){
 		j=0;
@@ -124,14 +109,16 @@ float circle(int y_in, int x_in){
 	int yp;
 	float rad;
 	float area;
+	int i;
+	int j;
+	int brake=0;
 	
 	v=0;
 	xp=x_in;
 	yp=y_in;
-	 
+	
 	//tener un solo loop asegura que v y h sean de igual tamaño
-	printf("Nueva llamada %d %d \n", yp, yp);
-	while(matrix[yp+v][xp]!=1 && matrix[yp-v][xp]!=1 && matrix[yp][xp+v]!=1 && matrix[yp][xp-v]!=1){
+	while(matrix[yp+v][xp]!=1 && matrix[yp-v][xp]!=1 && matrix[yp][xp+v]!=1 && matrix[yp][xp-v]!=1 && brake==0){
 		//pregunta si le da la vuelta al mundo a la derecha
 		if(xp+v+1>=COLS-1){
 			xp=0;	
@@ -142,25 +129,32 @@ float circle(int y_in, int x_in){
 		}
 		// si se pasa por arriba se encuentra de una con un cero
 		if(yp-(v+1)<=0){
-		  printf("Entra \n");
+		  //printf("Entra \n");
 			break;	
 		}	
 		//si intenta pasarse por abajo tambien tas tas tas
 		if(yp+v+1>=ROWS-1){
 			break;	
-		}
+		}	
 		v+=1;
-		printf("%d %d %d %d %d %d %d \n", yp+v, yp-v, xp+v, xp-v, xp, yp,v );
+		for(i=-v;i<=v;i++){
+			for(j=0;j<=v;j++){
+				if(matrix[yp+i][xp+j]==1 || matrix[yp+i][xp+j]== 1){
+					i=v+v;
+					j=v+v;
+					brake=1;	
+				}
+			}
+		}
 	}
-	printf("sale del while \n");
-	
-	rad = v;
-	area = PI * pow(rad,2);
+	area = PI * pow(v,2);
 	return area;
 }
 
 /*Escribe los resultados en archivos de datos*/
 void files(){
+	int i;
+	int j;
 	FILE *fout;
 	fout = fopen("polo.csv" , "w+");
 	fprintf(fout, "%d %d %f", max_x, max_y, max_area);	
@@ -178,46 +172,50 @@ int main(){
 	
 	/* Implementacion de MCMC para encontrar el polo sur de inaccesibilidad*/
 	//Primer intento genera 2 numeros aleatorios: x entre 0 y 743 y y entre 499 (deben ser enteros)
-	//srand(time(NULL)); //da nuevas seeds al rand
 	srand48(time(NULL));
-	//max_x= 742* (double)rand()/RAND_MAX + 0.5 ;
-	//max_y= 498* (double)rand()/RAND_MAX + 0.5 ;
-	max_x= 742* drand48();
-	max_y= 498* drand48();
 	
-	printf("%d %d\n", max_x, max_y);
+	max_x= COLS* drand48();
+	max_y= ROWS* drand48();
+	
+	//printf("%d %d\n", max_x, max_y);
 
 	//Se asegura que no esten en tierra (osea sobre un 1)
 	while(matrix[max_y][max_x]==1){
 		//max_x= 743* (double)rand()/RAND_MAX +0.5;
 		//max_y= 499* (double)rand()/RAND_MAX +0.5;	
-		max_x= 3* drand48();
-		max_y= 3* drand48();
+		max_x= COLS* drand48();
+		max_y= ROWS* drand48();
 		}
 	
 	//Encuentra el maximo circulo posible para el primer intento
-	//printf("%d %d %d \n", max_x, max_y, matrix[max_y][max_x]);
+	printf("%d %d %d \n", max_x, max_y, matrix[max_y][max_x]);
 
 	max_area = circle(max_y, max_x);
 	
 	int counter;
 	counter =0;
-	
 	//Comienza el ciclo
 	for(t=0; t<DATA_POINTS; t++){
 		counter+=1;
 		//printf("%d %d %d %d %f \n", max_x, max_y, matrix[max_y][max_x], counter, beta);
-		try_x=(int) rand_normal(max_x);
-		try_y=(int) rand_normal(max_y);
+		//try_x=(int) rand_normal(max_x);
+		//try_y=(int) rand_normal(max_y);
+		try_x= COLS*drand48();
+		try_y= ROWS*drand48();
+
 		
 		while( try_x<0 || try_y<0 || try_x>COLS-1 || try_y > ROWS-1){
-			try_x=(int) rand_normal(max_x);
-			try_y=(int) rand_normal(max_y);
+			//try_x=(int) rand_normal(max_x);
+			//try_y=(int) rand_normal(max_y);
+			try_x= COLS*drand48();
+			try_y= ROWS*drand48();
 		} 
 		
 		while(matrix[try_y][try_x]==1){
-		  try_x=(int) rand_normal(max_x);
-		  try_y=(int) rand_normal(max_y);
+		  //try_x=(int) rand_normal(max_x);
+		  //try_y=(int) rand_normal(max_y);
+		  try_x= COLS*drand48();
+		  try_y= ROWS*drand48();
 		}
 			
 		try_area = circle(try_y, try_x);
@@ -234,7 +232,7 @@ int main(){
 			//printf("%f \n", beta);
 			//en este caso rechaza las variables try
 			if(alpha<beta){
-				continue; //ojo con esto podria generar un error
+				continue; 
 			}
 			
 			//si alpha es mayor a beta entonces actualiza las variables max
@@ -246,7 +244,7 @@ int main(){
 		}			
 	}
 	
-	printf("%d %d %d %f \n", max_x, max_y, counter, beta);
+	printf("%d %d %f \n", max_x, max_y, max_area);
 	
 /*
 	Al final de este for deberiamos tener el polo de inaccesibilidad sur y 
